@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import SimpleNamespace
 
 import pytest
 from hf2mlx.convert_gguf import convert_to_gguf
@@ -44,8 +44,7 @@ def _install_fake_mlx(
     monkeypatch: pytest.MonkeyPatch,
     convert_fn: object,
 ) -> None:
-    fake = ModuleType("mlx_lm")
-    setattr(fake, "convert", convert_fn)
+    fake = SimpleNamespace(convert=convert_fn)
     monkeypatch.setitem(sys.modules, "mlx_lm", fake)
 
 
