@@ -11,7 +11,10 @@
 
 </div>
 
+Commands below use example Hugging Face model IDs. Swap in any model you want.
+
 ```bash
+# Example
 hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 ```
 
@@ -34,6 +37,7 @@ hf2mlx --help
 ## Quick start
 
 ```bash
+# Example
 hf2mlx Qwen/Qwen2.5-3B-Instruct --quant 4bit
 ```
 
@@ -46,12 +50,14 @@ hf2mlx ./models/my-model --quant 8bit
 Size / RAM only, no convert:
 
 ```bash
+# Example
 hf2mlx google/gemma-2-9b-it --estimate
 ```
 
 Custom output dir:
 
 ```bash
+# Example
 hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
 ```
 
@@ -77,6 +83,7 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "Hello
 ```bash
 uv pip install '.[gguf]'
 brew install llama.cpp
+# Example
 hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 ```
 
@@ -106,6 +113,7 @@ Llama, Gemma, and friends need a token with access on the model card.
 
 ```bash
 export HF_TOKEN=hf_...
+# Example
 hf2mlx meta-llama/Llama-3.2-3B-Instruct --quant 4bit
 ```
 

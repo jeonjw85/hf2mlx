@@ -11,7 +11,10 @@
 
 </div>
 
+아래 명령의 Hugging Face 모델 ID는 예시입니다. 원하는 모델로 바꿔 쓰면 됩니다.
+
 ```bash
+# 예시
 hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 ```
 
@@ -34,6 +37,7 @@ hf2mlx --help
 ## 빠른 시작
 
 ```bash
+# 예시
 hf2mlx Qwen/Qwen2.5-3B-Instruct --quant 4bit
 ```
 
@@ -46,12 +50,14 @@ hf2mlx ./models/my-model --quant 8bit
 변환 없이 용량과 메모리만 확인할 때:
 
 ```bash
+# 예시
 hf2mlx google/gemma-2-9b-it --estimate
 ```
 
 출력 디렉터리 지정:
 
 ```bash
+# 예시
 hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
 ```
 
@@ -77,6 +83,7 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "안�
 ```bash
 uv pip install '.[gguf]'
 brew install llama.cpp
+# 예시
 hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 ```
 
@@ -106,6 +113,7 @@ Llama, Gemma 등 게이트된 모델은 모델 카드에서 접근 권한을 받
 
 ```bash
 export HF_TOKEN=hf_...
+# 예시
 hf2mlx meta-llama/Llama-3.2-3B-Instruct --quant 4bit
 ```
 
