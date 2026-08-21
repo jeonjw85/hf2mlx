@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from typing_extensions import assert_never
 
-from hf2mlx.utils import Quant
+from hf2mlx.utils import OutputFormat, Quant
 
 _INFERENCE_LOW: float = 1.4
 _INFERENCE_HIGH: float = 1.9
@@ -38,8 +38,37 @@ def bytes_per_param(quant: Quant) -> BytesPerParam:
             assert_never(unreachable)
 
 
+def bytes_per_param_gguf(quant: Quant) -> BytesPerParam:
+    match quant:
+        case Quant.FOUR_BIT:
+            return BytesPerParam(low=0.50, high=0.65)
+        case Quant.EIGHT_BIT:
+            return BytesPerParam(low=1.0, high=1.1)
+        case Quant.BF16:
+            return BytesPerParam(low=2.0, high=2.0)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 def estimate_mlx(param_count: int, quant: Quant) -> SizeEstimate:
-    bpp = bytes_per_param(quant)
+    return _estimate(param_count, bytes_per_param(quant))
+
+
+def estimate_gguf(param_count: int, quant: Quant) -> SizeEstimate:
+    return _estimate(param_count, bytes_per_param_gguf(quant))
+
+
+def estimate_for(param_count: int, quant: Quant, fmt: OutputFormat) -> SizeEstimate:
+    match fmt:
+        case OutputFormat.MLX:
+            return estimate_mlx(param_count, quant)
+        case OutputFormat.GGUF:
+            return estimate_gguf(param_count, quant)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+def _estimate(param_count: int, bpp: BytesPerParam) -> SizeEstimate:
     size_low = int(param_count * bpp.low)
     size_high = int(param_count * bpp.high)
     size_mid = (size_low + size_high) // 2
