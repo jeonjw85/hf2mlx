@@ -2,14 +2,14 @@
 
 # HF2MLX
 
+**Convert Hugging Face models to MLX for Apple Silicon.**
+
 [![CI](https://img.shields.io/github/actions/workflow/status/jeonjw85/hf2mlx/ci.yml?branch=main)](https://github.com/jeonjw85/hf2mlx/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/github/v/release/jeonjw85/hf2mlx)](https://github.com/jeonjw85/hf2mlx/releases)
 
 [한국어](README.ko.md)
 
 </div>
-
-Convert Hugging Face models to **MLX** for Apple Silicon.
 
 ```bash
 hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
@@ -63,14 +63,14 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "Hello
 
 ## Options
 
-| Option | Description | Default |
-|---|---|---|
-| `--format` | `mlx` or `gguf` | `mlx` |
-| `--quant` | `4bit`, `8bit`, `bf16` | `4bit` |
-| `--out` | output directory | `./converted/<name>-mlx-<quant>` |
-| `--estimate` | print size/memory only | off |
-| `--hf-token` | Hugging Face token | `HF_TOKEN` |
-| `--force` | overwrite existing output | off |
+| Option       | Description               | Default                          |
+| ------------ | ------------------------- | -------------------------------- |
+| `--format`   | `mlx` or `gguf`           | `mlx`                            |
+| `--quant`    | `4bit`, `8bit`, `bf16`    | `4bit`                           |
+| `--out`      | output directory          | `./converted/<name>-mlx-<quant>` |
+| `--estimate` | print size/memory only    | off                              |
+| `--hf-token` | Hugging Face token        | `HF_TOKEN`                       |
+| `--force`    | overwrite existing output | off                              |
 
 ## GGUF
 
@@ -80,11 +80,11 @@ brew install llama.cpp
 hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 ```
 
-| `--quant` | GGUF type |
-|---|---|
-| `4bit` | Q4_K_M (`llama-quantize`) |
-| `8bit` | Q8_0 |
-| `bf16` | BF16 |
+| `--quant` | GGUF type                 |
+| --------- | ------------------------- |
+| `4bit`    | Q4_K_M (`llama-quantize`) |
+| `8bit`    | Q8_0                      |
+| `bf16`    | BF16                      |
 
 4-bit needs `llama-quantize` on `PATH` (`brew install llama.cpp`). The first GGUF convert may clone llama.cpp's Python converter into `~/.cache/hf2mlx`. You can point at an existing checkout with `LLAMA_CPP_DIR`.
 
@@ -92,11 +92,11 @@ hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 
 Weights and KV cache share unified memory. Longer context costs extra RAM. Numbers below are rough.
 
-| Machine | Comfortable | Tight | Skip |
-|---|---|---|---|
-| 16 GB | 3B 4-bit | 7B 4-bit | 7B 8-bit / 13B+ |
-| 24 GB | 7B 4-bit or 8-bit | 14B 4-bit | 32B+ unquantized |
-| 32 GB+ | 14B 4-bit, 7B bf16 | 32B 4-bit | 70B unless 4-bit |
+| Machine | Comfortable        | Tight     | Skip             |
+| ------- | ------------------ | --------- | ---------------- |
+| 16 GB   | 3B 4-bit           | 7B 4-bit  | 7B 8-bit / 13B+  |
+| 24 GB   | 7B 4-bit or 8-bit  | 14B 4-bit | 32B+ unquantized |
+| 32 GB+  | 14B 4-bit, 7B bf16 | 32B 4-bit | 70B unless 4-bit |
 
 Default is 4-bit because that is what actually fits on ≤24 GB machines.
 
