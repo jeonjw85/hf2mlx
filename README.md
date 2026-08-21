@@ -15,7 +15,7 @@ Convert Hugging Face models to **MLX** for Apple Silicon.
 hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 ```
 
-Downloads if needed, converts, then prints the output path, size, and a rough RAM estimate. After that the model is local — no cloud.
+Downloads if needed, converts, then prints the output path, size, and a rough RAM estimate. After that the model is local - no cloud.
 
 ## Install
 

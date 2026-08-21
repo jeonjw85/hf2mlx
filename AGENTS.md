@@ -2,7 +2,7 @@
 
 ## Project
 
-**HF2MLX** — CLI that converts Hugging Face models into Mac-friendly local formats.
+**HF2MLX** - CLI that converts Hugging Face models into Mac-friendly local formats.
 
 Primary target:
 
@@ -103,8 +103,8 @@ Rough guidance, not exact science.
 
 MLX:
 
-- 4-bit ≈ 0.55–0.7 bytes/param
-- 8-bit ≈ 1.0–1.2 bytes/param
+- 4-bit ≈ 0.55-0.7 bytes/param
+- 8-bit ≈ 1.0-1.2 bytes/param
 - bf16 ≈ 2.0 bytes/param
 
 Always mention that KV cache / context length adds extra memory.
@@ -119,7 +119,7 @@ Format: MLX
 Quant: 4bit
 Output: ./converted/Qwen2.5-7B-Instruct-mlx-4bit
 Size: 4.1 GB
-Est. inference memory: ~6–8 GB (depends on context length)
+Est. inference memory: ~6-8 GB (depends on context length)
 Done.
 ```
 
