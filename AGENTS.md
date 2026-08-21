@@ -10,7 +10,7 @@ Primary target:
 
 Secondary:
 
-- **GGUF** (optional; do not build unless explicitly requested)
+- **GGUF** via llama.cpp `convert_hf_to_gguf.py` and `llama-quantize`
 
 Goal: one command to get a usable local LLM on Apple Silicon.
 

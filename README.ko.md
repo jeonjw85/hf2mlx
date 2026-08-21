@@ -72,7 +72,21 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "안�
 | `--hf-token` | Hugging Face 토큰 | `HF_TOKEN` |
 | `--force` | 기존 출력 폴더를 덮어씀 | 꺼짐 |
 
-GGUF 변환은 아직 지원하지 않습니다. `--format mlx`를 사용하세요.
+## GGUF
+
+```bash
+uv pip install '.[gguf]'
+brew install llama.cpp
+hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
+```
+
+| `--quant` | GGUF 형식 |
+|---|---|
+| `4bit` | Q4_K_M (`llama-quantize`) |
+| `8bit` | Q8_0 |
+| `bf16` | BF16 |
+
+4-bit는 `PATH`에 `llama-quantize`가 필요합니다 (`brew install llama.cpp`). 첫 GGUF 변환 시 llama.cpp 변환 스크립트를 `~/.cache/hf2mlx`에 받을 수 있습니다. 이미 받아 둔 경우 `LLAMA_CPP_DIR`을 지정하면 됩니다.
 
 ## 맥 메모리
 

@@ -72,7 +72,21 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "Hello
 | `--hf-token` | Hugging Face token | `HF_TOKEN` |
 | `--force` | overwrite existing output | off |
 
-GGUF is not implemented. Use `--format mlx`.
+## GGUF
+
+```bash
+uv pip install '.[gguf]'
+brew install llama.cpp
+hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
+```
+
+| `--quant` | GGUF type |
+|---|---|
+| `4bit` | Q4_K_M (`llama-quantize`) |
+| `8bit` | Q8_0 |
+| `bf16` | BF16 |
+
+4-bit needs `llama-quantize` on `PATH` (`brew install llama.cpp`). The first GGUF convert may clone llama.cpp's Python converter into `~/.cache/hf2mlx`. You can point at an existing checkout with `LLAMA_CPP_DIR`.
 
 ## Mac memory
 
