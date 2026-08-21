@@ -5,13 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from hf2mlx.convert_gguf import convert_to_gguf
 from hf2mlx.convert_mlx import convert_to_mlx, quant_to_mlx_args
-from hf2mlx.errors import (
-    ConversionFailedError,
-    GgufNotImplementedError,
-    UnsupportedArchitectureError,
-)
+from hf2mlx.errors import ConversionFailedError, UnsupportedArchitectureError
 from hf2mlx.utils import Quant
 
 
@@ -33,11 +28,6 @@ def test_bf16_disables_quantization() -> None:
     assert args.quantize is False
     assert args.q_bits is None
     assert args.dtype == "bfloat16"
-
-
-def test_gguf_convert_raises_clear_error() -> None:
-    with pytest.raises(GgufNotImplementedError, match="not implemented"):
-        convert_to_gguf(Path("src"), Path("out"), Quant.FOUR_BIT)
 
 
 def _install_fake_mlx(

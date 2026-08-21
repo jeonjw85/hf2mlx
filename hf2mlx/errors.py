@@ -128,10 +128,12 @@ class HubRequestError(Hf2mlxError):
 
 
 @dataclass(frozen=True, slots=True)
-class GgufNotImplementedError(Hf2mlxError):
+class GgufToolsMissingError(Hf2mlxError):
+    reason: str
+
     @override
     def __str__(self) -> str:
-        return "Error: GGUF conversion is not implemented. Use --format mlx."
+        return f"Error: GGUF tools missing. {self.reason}"
 
 
 @dataclass(frozen=True, slots=True)
