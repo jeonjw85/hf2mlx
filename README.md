@@ -20,6 +20,17 @@ hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 
 Downloads if needed, converts, then prints the output path, size, and a rough RAM estimate. After that the model is local - no cloud.
 
+## Why this exists
+
+`mlx_lm.convert` and `convert_hf_to_gguf.py` only convert. Ollama and LM Studio are apps. HF2MLX is **one CLI to make a local model on a Mac**.
+
+- **MLX and GGUF from the same command.** `--format mlx` is the default. `--format gguf` uses llama.cpp. You do not learn two tools.
+- **Same quant names.** `4bit` / `8bit` / `bf16`. On GGUF, 4bit means Q4_K_M.
+- **Size and RAM before you convert.** `--estimate` does not download or convert. If disk or memory is too low, conversion does not start.
+- **Written for 16GB / 24GB Macs.** That is why 4-bit is the default.
+- **One-line failures.** Gated models, missing paths, existing output, and low disk/RAM print a short error instead of a traceback.
+- **Conversion only.** No chat UI, no server. Pass the output folder to `mlx_lm` or `llama-cli`.
+
 ## Install
 
 Apple Silicon, Python 3.10+. Intel Macs are not a target.
