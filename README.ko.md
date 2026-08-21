@@ -9,17 +9,17 @@
 
 </div>
 
-Hugging Face 모델을 맥에서 돌릴 수 있게 **MLX**로 바꿔주는 CLI예요. Apple Silicon용입니다.
+Hugging Face 모델을 Apple Silicon용 **MLX**로 변환하는 CLI입니다.
 
 ```bash
 hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 ```
 
-모델 받고, 변환하고, 용량이랑 메모리 감 정도를 찍어줍니다. 한 번 받아두면 그다음엔 로컬만 씁니다.
+모델을 내려받고 변환한 뒤, 출력 경로와 용량, 대략적인 메모리 사용량을 출력합니다. 변환이 끝나면 로컬에서만 사용합니다.
 
 ## 설치
 
-Apple Silicon, Python 3.10+ 필요합니다. 인텔 맥은 대상이 아니에요.
+Apple Silicon, Python 3.10+가 필요합니다. Intel Mac은 지원하지 않습니다.
 
 ```bash
 git clone https://github.com/jeonjw85/hf2mlx.git
@@ -31,31 +31,31 @@ uv pip install .
 hf2mlx --help
 ```
 
-## 바로 쓰기
+## 빠른 시작
 
 ```bash
 hf2mlx Qwen/Qwen2.5-3B-Instruct --quant 4bit
 ```
 
-이미 받아둔 폴더면 경로만 넘기면 됩니다.
+이미 받아 둔 로컬 폴더:
 
 ```bash
 hf2mlx ./models/my-model --quant 8bit
 ```
 
-변환 없이 용량만 보고 싶을 때:
+변환 없이 용량과 메모리만 확인할 때:
 
 ```bash
 hf2mlx google/gemma-2-9b-it --estimate
 ```
 
-출력 위치 지정:
+출력 디렉터리 지정:
 
 ```bash
 hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
 ```
 
-변환이 끝나면 이렇게 돌려보면 됩니다.
+변환 후 실행 예시:
 
 ```bash
 mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "안녕"
@@ -68,36 +68,36 @@ mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "안�
 | `--format` | `mlx` 또는 `gguf` | `mlx` |
 | `--quant` | `4bit`, `8bit`, `bf16` | `4bit` |
 | `--out` | 출력 폴더 | `./converted/<이름>-mlx-<quant>` |
-| `--estimate` | 용량/메모리만 계산하고 변환은 안 함 | 꺼짐 |
+| `--estimate` | 용량/메모리만 계산하고 변환하지 않음 | 꺼짐 |
 | `--hf-token` | Hugging Face 토큰 | `HF_TOKEN` |
-| `--force` | 이미 있는 출력 폴더를 덮어씀 | 꺼짐 |
+| `--force` | 기존 출력 폴더를 덮어씀 | 꺼짐 |
 
-GGUF는 아직 없습니다. `--format mlx`로 쓰세요.
+GGUF 변환은 아직 지원하지 않습니다. `--format mlx`를 사용하세요.
 
 ## 맥 메모리
 
-통합 메모리에 가중치랑 KV 캐시가 같이 올라갑니다. 컨텍스트가 길어지면 그만큼 더 먹어요. 아래 숫자는 감입니다. 과학 아닙니다.
+통합 메모리에는 가중치와 KV 캐시가 함께 올라갑니다. 컨텍스트가 길수록 추가 메모리가 필요합니다. 아래 수치는 대략적인 기준입니다.
 
-| 머신 | 여유 있음 | 빠듯함 | 비추 |
+| 머신 | 여유 있음 | 빠듯함 | 비권장 |
 |---|---|---|---|
 | 16 GB | 3B 4-bit | 7B 4-bit | 7B 8-bit / 13B+ |
-| 24 GB | 7B 4-bit 또는 8-bit | 14B 4-bit | 양자화 안 한 32B+ |
+| 24 GB | 7B 4-bit 또는 8-bit | 14B 4-bit | 양자화하지 않은 32B+ |
 | 32 GB+ | 14B 4-bit, 7B bf16 | 32B 4-bit | 70B는 4-bit여도 부담 |
 
-기본값이 4-bit인 이유는 단순합니다. 24GB 이하에서 실제로 들어가는 쪽이 그거라서요.
+기본값은 4-bit입니다. 24GB 이하 환경에서 실제로 올리기 쉬운 설정이기 때문입니다.
 
 ## 게이트된 모델
 
-Llama, Gemma 같은 건 모델 카드에서 권한 받은 토큰이 필요합니다.
+Llama, Gemma 등 게이트된 모델은 모델 카드에서 접근 권한을 받은 토큰이 필요합니다.
 
 ```bash
 export HF_TOKEN=hf_...
 hf2mlx meta-llama/Llama-3.2-3B-Instruct --quant 4bit
 ```
 
-토큰은 여기서 만듭니다: https://huggingface.co/settings/tokens
+토큰 발급: https://huggingface.co/settings/tokens
 
-`Error: model is gated. Set HF_TOKEN and retry.` 가 뜨면 토큰이 없거나, 있어도 그 모델 권한이 없는 겁니다.
+`Error: model is gated. Set HF_TOKEN and retry.`가 나오면 토큰이 없거나, 해당 모델 권한이 없는 경우입니다.
 
 ## 개발
 
@@ -110,4 +110,4 @@ uv run basedpyright
 
 ## 라이선스
 
-MIT입니다. [LICENSE](LICENSE) 참고.
+MIT. [LICENSE](LICENSE)를 참고하세요.
