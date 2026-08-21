@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -9,16 +10,22 @@ from hf2mlx.hf_utils import HubModel, LocalModel
 from hf2mlx.utils import Quant
 from typer.testing import CliRunner
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 runner = CliRunner()
 
 
+def _visible(text: str) -> str:
+    return _ANSI.sub("", text)
+
+
 def test_help_exits_zero_when_invoked() -> None:
-    result = runner.invoke(app, ["--help"])
+    result = runner.invoke(app, ["--help"], color=False)
     assert result.exit_code == 0
-    assert "hf2mlx" in result.stdout
-    assert "--format" in result.stdout
-    assert "--quant" in result.stdout
-    assert "--estimate" in result.stdout
+    out = _visible(result.stdout)
+    assert "hf2mlx" in out
+    assert "--format" in out
+    assert "--quant" in out
+    assert "--estimate" in out
 
 
 def test_invalid_quant_fails_with_clear_message() -> None:
