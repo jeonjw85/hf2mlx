@@ -42,20 +42,57 @@ def test_invalid_format_fails_with_clear_message() -> None:
     assert "mlx" in combined.lower() or "invalid" in combined.lower()
 
 
-def test_gguf_fails_without_converting(monkeypatch: pytest.MonkeyPatch) -> None:
-    called = {"convert": False}
+def test_gguf_estimate_does_not_convert(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = {"gguf": False, "mlx": False}
 
-    def fake_convert(hf_path: Path, out: Path, quant: Quant) -> None:
-        called["convert"] = True
+    def fake_resolve(model: str, token: str | None) -> HubModel:
+        return HubModel(label=model, repo_id=model, param_count=7_000_000_000)
 
-    monkeypatch.setattr("hf2mlx.cli.convert_to_mlx", fake_convert)
+    def fake_gguf(hf_path: Path, out: Path, quant: Quant) -> None:
+        called["gguf"] = True
+
+    def fake_mlx(hf_path: Path, out: Path, quant: Quant) -> None:
+        called["mlx"] = True
+
+    monkeypatch.setattr("hf2mlx.cli.resolve_model", fake_resolve)
+    monkeypatch.setattr("hf2mlx.cli.convert_to_gguf", fake_gguf)
+    monkeypatch.setattr("hf2mlx.cli.convert_to_mlx", fake_mlx)
     result = runner.invoke(
         app,
-        ["Qwen/Qwen2.5-3B-Instruct", "--format", "gguf"],
+        ["Qwen/Qwen2.5-7B-Instruct", "--format", "gguf", "--estimate"],
     )
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "GGUF" in result.stdout
-    assert called["convert"] is False
+    assert called["gguf"] is False
+    assert called["mlx"] is False
+
+
+def test_gguf_convert_writes_output(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+
+    def fake_resolve(model: str, token: str | None) -> LocalModel:
+        return LocalModel(label=model, path=source, param_count=1_000_000)
+
+    def fake_gguf(hf_path: Path, dest: Path, quant: Quant) -> None:
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "model.gguf").write_bytes(b"\x00" * 2048)
+
+    monkeypatch.setattr("hf2mlx.cli.resolve_model", fake_resolve)
+    monkeypatch.setattr("hf2mlx.cli.convert_to_gguf", fake_gguf)
+    monkeypatch.setattr("hf2mlx.cli.total_ram_bytes", lambda: 10_000_000_000)
+    out = tmp_path / "out"
+    result = runner.invoke(
+        app,
+        ["dummy-model", "--format", "gguf", "--out", str(out)],
+    )
+    assert result.exit_code == 0, result.stdout
+    assert "Done." in result.stdout
+    assert "llama-cli" in result.stdout
+    assert (out / "model.gguf").is_file()
 
 
 def test_estimate_does_not_convert(monkeypatch: pytest.MonkeyPatch) -> None:

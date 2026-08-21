@@ -8,15 +8,15 @@ import typer
 from rich.console import Console
 from typing_extensions import assert_never
 
+from hf2mlx.convert_gguf import convert_to_gguf
 from hf2mlx.convert_mlx import convert_to_mlx
 from hf2mlx.errors import (
-    GgufNotImplementedError,
     Hf2mlxError,
     InsufficientMemoryError,
     ParamCountUnknownError,
     UnexpectedError,
 )
-from hf2mlx.estimate import SizeEstimate, estimate_mlx, source_weight_bytes
+from hf2mlx.estimate import SizeEstimate, estimate_for, source_weight_bytes
 from hf2mlx.hf_utils import (
     HubModel,
     LocalModel,
@@ -39,7 +39,7 @@ from hf2mlx.utils import (
 console = Console()
 app = typer.Typer(
     name="hf2mlx",
-    help="Convert Hugging Face models to MLX for Apple Silicon.",
+    help="Convert Hugging Face models to MLX or GGUF.",
     add_completion=False,
     no_args_is_help=True,
     pretty_exceptions_enable=False,
@@ -109,28 +109,21 @@ def main(
 
 
 def execute(job: ConvertJob) -> None:
-    match job.fmt:
-        case OutputFormat.GGUF:
-            raise GgufNotImplementedError
-        case OutputFormat.MLX:
-            pass
-        case _ as unreachable:
-            assert_never(unreachable)
     resolved = resolve_model(job.model, job.hf_token)
     params = resolved.param_count
     if params is None:
         raise ParamCountUnknownError(model=job.model)
-    est = estimate_mlx(params, job.quant)
+    est = estimate_for(params, job.quant, job.fmt)
     out = job.out
     if out is None:
         out = default_out_dir(job.model, job.fmt, job.quant)
     _print_plan(job, est, out)
     if job.estimate_only:
         return
-    _convert_mlx(job, resolved, est, out)
+    _convert(job, resolved, est, out)
 
 
-def _convert_mlx(
+def _convert(
     job: ConvertJob,
     resolved: ResolvedModel,
     est: SizeEstimate,
@@ -138,9 +131,16 @@ def _convert_mlx(
 ) -> None:
     prepare_out_dir(out, job.force)
     source = _materialize_source(job, resolved, est, out)
-    with console.status("Converting to MLX..."):
-        convert_to_mlx(source, out, job.quant)
-    _print_done(out, dir_size(out), est)
+    match job.fmt:
+        case OutputFormat.MLX:
+            with console.status("Converting to MLX..."):
+                convert_to_mlx(source, out, job.quant)
+        case OutputFormat.GGUF:
+            with console.status("Converting to GGUF..."):
+                convert_to_gguf(source, out, job.quant)
+        case _ as unreachable:
+            assert_never(unreachable)
+    _print_done(job.fmt, out, dir_size(out), est)
 
 
 def _materialize_source(
@@ -189,9 +189,21 @@ def _print_plan(job: ConvertJob, est: SizeEstimate, out: Path) -> None:
     console.print(f"Est. inference memory: {memory}")
 
 
-def _print_done(out: Path, actual_size: int, est: SizeEstimate) -> None:
+def _print_done(
+    fmt: OutputFormat,
+    out: Path,
+    actual_size: int,
+    est: SizeEstimate,
+) -> None:
     console.print(f"Size: {format_bytes(actual_size)}")
     memory = format_gb_range(est.inference_low_bytes, est.inference_high_bytes)
     console.print(f"Est. inference memory: {memory}")
     console.print("Done.")
-    console.print(f'Next: mlx_lm.generate --model {out} --prompt "Hello"')
+    match fmt:
+        case OutputFormat.MLX:
+            console.print(f'Next: mlx_lm.generate --model {out} --prompt "Hello"')
+        case OutputFormat.GGUF:
+            gguf_path = out / "model.gguf"
+            console.print(f'Next: llama-cli -m {gguf_path} -p "Hello"')
+        case _ as unreachable:
+            assert_never(unreachable)
