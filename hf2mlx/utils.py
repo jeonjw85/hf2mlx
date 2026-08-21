@@ -54,10 +54,10 @@ def format_gb_range(low: int, high: int) -> str:
     if hi_bytes < _BYTES_PER_GB:
         lo_mb = lo_bytes / _BYTES_PER_MB
         hi_mb = hi_bytes / _BYTES_PER_MB
-        return f"~{lo_mb:.0f}–{hi_mb:.0f} MB (depends on context length)"
+        return f"~{lo_mb:.0f}-{hi_mb:.0f} MB (depends on context length)"
     lo_gb = lo_bytes / _BYTES_PER_GB
     hi_gb = hi_bytes / _BYTES_PER_GB
-    return f"~{lo_gb:.0f}–{hi_gb:.0f} GB (depends on context length)"
+    return f"~{lo_gb:.0f}-{hi_gb:.0f} GB (depends on context length)"
 
 
 def dir_size(path: Path) -> int:

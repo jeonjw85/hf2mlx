@@ -94,7 +94,6 @@ ignore = [
     "FIX002",
     "DOC",
     "TC",
-    "RUF001",
 ]
 fixable = ["ALL"]
 
