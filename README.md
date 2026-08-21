@@ -1,6 +1,13 @@
+<div align="center">
+
 # HF2MLX
 
+[![CI](https://img.shields.io/github/actions/workflow/status/jeonjw85/hf2mlx/ci.yml?branch=main)](https://github.com/jeonjw85/hf2mlx/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/v/release/jeonjw85/hf2mlx)](https://github.com/jeonjw85/hf2mlx/releases)
+
 [한국어](README.ko.md)
+
+</div>
 
 Convert Hugging Face models to **MLX** for Apple Silicon.
 

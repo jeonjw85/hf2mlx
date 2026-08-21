@@ -1,6 +1,13 @@
+<div align="center">
+
 # HF2MLX
 
+[![CI](https://img.shields.io/github/actions/workflow/status/jeonjw85/hf2mlx/ci.yml?branch=main)](https://github.com/jeonjw85/hf2mlx/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/v/release/jeonjw85/hf2mlx)](https://github.com/jeonjw85/hf2mlx/releases)
+
 [English](README.md)
+
+</div>
 
 Hugging Face 모델을 맥에서 돌릴 수 있게 **MLX**로 바꿔주는 CLI예요. Apple Silicon용입니다.
 
