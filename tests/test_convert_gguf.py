@@ -84,6 +84,7 @@ def test_four_bit_without_quantize_binary_fails(
     converter = tmp_path / "convert_hf_to_gguf.py"
     converter.write_text("# converter", encoding="utf-8")
     monkeypatch.setattr("hf2mlx.convert_gguf._ensure_converter", lambda: converter)
+
     def no_which(_name: str) -> str | None:
         return None
 
