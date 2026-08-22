@@ -318,12 +318,12 @@ def test_rebuild_converts_even_when_ready_exists(
         called["find"] = True
         return "mlx-community/dummy-4bit"
 
-    monkeypatch.setattr("hf2mlx.job.resolve_model", fake_resolve)
-    monkeypatch.setattr("hf2mlx.job.convert_to_mlx", fake_convert)
-    monkeypatch.setattr("hf2mlx.job.find_ready_mlx", fake_find)
     def fake_download(repo_id: str, token: str | None) -> Path:
         return source
 
+    monkeypatch.setattr("hf2mlx.job.resolve_model", fake_resolve)
+    monkeypatch.setattr("hf2mlx.job.convert_to_mlx", fake_convert)
+    monkeypatch.setattr("hf2mlx.job.find_ready_mlx", fake_find)
     monkeypatch.setattr("hf2mlx.job.download_config", _no_config)
     monkeypatch.setattr("hf2mlx.job.download_model", fake_download)
     monkeypatch.setattr("hf2mlx.job.total_ram_bytes", lambda: 10_000_000_000)
