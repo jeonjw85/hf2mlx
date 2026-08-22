@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from hf2mlx.arch import ModelArch
 from hf2mlx.estimate import (
     bytes_per_param,
     bytes_per_param_gguf,
@@ -41,3 +42,19 @@ def test_gguf_four_bit_is_q4_k_m_sized() -> None:
     est = estimate_gguf(7_000_000_000, Quant.FOUR_BIT)
     mlx = estimate_mlx(7_000_000_000, Quant.FOUR_BIT)
     assert est.size_mid_bytes < mlx.size_mid_bytes
+
+
+def test_longer_ctx_increases_inference_not_weight_size() -> None:
+    short = estimate_mlx(7_000_000_000, Quant.FOUR_BIT, ctx=4096)
+    long = estimate_mlx(7_000_000_000, Quant.FOUR_BIT, ctx=32768)
+    assert short.size_mid_bytes == long.size_mid_bytes
+    assert long.kv_bytes > short.kv_bytes
+    assert long.inference_high_bytes > short.inference_high_bytes
+    assert short.ctx == 4096
+    assert long.ctx == 32768
+
+
+def test_arch_kv_uses_layers_heads_and_ctx() -> None:
+    arch = ModelArch(n_layers=32, n_kv_heads=8, head_dim=128)
+    est = estimate_mlx(8_000_000_000, Quant.FOUR_BIT, ctx=4096, arch=arch)
+    assert est.kv_bytes == 2 * 32 * 8 * 128 * 4096 * 2

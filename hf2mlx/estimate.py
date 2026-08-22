@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Final
 
 from typing_extensions import assert_never
 
+from hf2mlx.arch import ModelArch, kv_cache_bytes
 from hf2mlx.utils import OutputFormat, Quant
 
-_INFERENCE_LOW: float = 1.4
-_INFERENCE_HIGH: float = 1.9
+_INFERENCE_OVERHEAD: Final = 1.15
+DEFAULT_CTX: Final = 4096
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +26,8 @@ class SizeEstimate:
     size_mid_bytes: int
     inference_low_bytes: int
     inference_high_bytes: int
+    kv_bytes: int
+    ctx: int
 
 
 def bytes_per_param(quant: Quant) -> BytesPerParam:
@@ -50,35 +54,59 @@ def bytes_per_param_gguf(quant: Quant) -> BytesPerParam:
             assert_never(unreachable)
 
 
-def estimate_mlx(param_count: int, quant: Quant) -> SizeEstimate:
-    return _estimate(param_count, bytes_per_param(quant))
+def estimate_mlx(
+    param_count: int,
+    quant: Quant,
+    ctx: int = DEFAULT_CTX,
+    arch: ModelArch | None = None,
+) -> SizeEstimate:
+    return _estimate(param_count, bytes_per_param(quant), ctx, arch)
 
 
-def estimate_gguf(param_count: int, quant: Quant) -> SizeEstimate:
-    return _estimate(param_count, bytes_per_param_gguf(quant))
+def estimate_gguf(
+    param_count: int,
+    quant: Quant,
+    ctx: int = DEFAULT_CTX,
+    arch: ModelArch | None = None,
+) -> SizeEstimate:
+    return _estimate(param_count, bytes_per_param_gguf(quant), ctx, arch)
 
 
-def estimate_for(param_count: int, quant: Quant, fmt: OutputFormat) -> SizeEstimate:
+def estimate_for(
+    param_count: int,
+    quant: Quant,
+    fmt: OutputFormat,
+    ctx: int = DEFAULT_CTX,
+    arch: ModelArch | None = None,
+) -> SizeEstimate:
     match fmt:
         case OutputFormat.MLX:
-            return estimate_mlx(param_count, quant)
+            return estimate_mlx(param_count, quant, ctx, arch)
         case OutputFormat.GGUF:
-            return estimate_gguf(param_count, quant)
+            return estimate_gguf(param_count, quant, ctx, arch)
         case _ as unreachable:
             assert_never(unreachable)
 
 
-def _estimate(param_count: int, bpp: BytesPerParam) -> SizeEstimate:
+def _estimate(
+    param_count: int,
+    bpp: BytesPerParam,
+    ctx: int,
+    arch: ModelArch | None,
+) -> SizeEstimate:
     size_low = int(param_count * bpp.low)
     size_high = int(param_count * bpp.high)
     size_mid = (size_low + size_high) // 2
+    kv = kv_cache_bytes(arch, param_count, ctx)
     return SizeEstimate(
         param_count=param_count,
         size_low_bytes=size_low,
         size_high_bytes=size_high,
         size_mid_bytes=size_mid,
-        inference_low_bytes=int(size_mid * _INFERENCE_LOW),
-        inference_high_bytes=int(size_mid * _INFERENCE_HIGH),
+        inference_low_bytes=size_mid + kv,
+        inference_high_bytes=int(size_high * _INFERENCE_OVERHEAD) + kv,
+        kv_bytes=kv,
+        ctx=ctx,
     )
 
 
