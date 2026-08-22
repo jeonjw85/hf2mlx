@@ -29,12 +29,12 @@ def test_format_bytes_uses_gb_for_billions() -> None:
     assert format_bytes(4_100_000_000) == "4.1 GB"
 
 
-def test_format_gb_range_mentions_context_length() -> None:
-    text = format_gb_range(6_000_000_000, 8_000_000_000)
+def test_format_gb_range_includes_ctx() -> None:
+    text = format_gb_range(6_000_000_000, 8_000_000_000, ctx=4096)
     assert "6" in text
     assert "8" in text
     assert "GB" in text
-    assert "context length" in text
+    assert "4096" in text
 
 
 def test_format_gb_range_uses_mb_when_under_one_gb() -> None:
