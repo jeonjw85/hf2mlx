@@ -2,38 +2,42 @@
 
 # HF2MLX
 
-**Hugging Face 모델을 Apple Silicon용 MLX로 변환하는 CLI입니다**
+Hugging Face 모델을 Apple Silicon에서 쓰는 MLX로 변환하는 툴
 
 [![CI](https://img.shields.io/github/actions/workflow/status/jeonjw85/hf2mlx/ci.yml?branch=main)](https://github.com/jeonjw85/hf2mlx/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/github/v/release/jeonjw85/hf2mlx)](https://github.com/jeonjw85/hf2mlx/releases)
 
-[English](README.md)
+<a href="README.md">English</a>
+&nbsp;·&nbsp;
+<a href="README.ko.md"><strong>한국어</strong></a>
 
 </div>
 
-아래 명령의 Hugging Face 모델 ID는 예시입니다. 원하는 모델로 바꿔 쓰면 됩니다.
-
 ```bash
-# 예시
-hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
+hf2mlx Qwen/Qwen2.5-7B-Instruct
 ```
 
-모델을 내려받고 변환한 뒤, 출력 경로와 용량, 대략적인 메모리 사용량을 출력합니다. 변환이 끝나면 로컬에서만 사용합니다.
+`mlx-community`에 같은 양자화본이 있으면 그걸 받고 없으면 로컬에서 변환합니다.  
+끝나면 경로, 용량, 지정한 컨텍스트 기준 RAM 예상치를 출력합니다.
 
-## 이런 점이 다릅니다
+```bash
+hf2mlx Qwen/Qwen2.5-7B-Instruct --fit
+hf2mlx Qwen/Qwen2.5-7B-Instruct --estimate --ctx 8192
+hf2mlx ./models/my-model --quant 8bit
+```
 
-`mlx_lm.convert`나 `convert_hf_to_gguf.py`는 변환만 합니다. Ollama나 LM Studio는 앱입니다. HF2MLX는 **맥에서 로컬 모델을 만드는 한 줄 CLI**입니다.
+> `--fit`은 이 맥의 RAM을 보고 `bf16` / `8bit` / `4bit` 중 들어가는 걸 고릅니다 ("편하냐"가 아니라 "올라가냐")
+> OS용으로 약 7GB를 남겨 두고 아무것도 안 들어가면 받기 전에 끝냅니다
 
-- **MLX와 GGUF를 같은 명령으로 만듭니다.** `--format mlx`가 기본이고, `--format gguf`면 llama.cpp 쪽으로 갑니다. 도구를 두 개 외울 필요가 없습니다.
-- **양자화 이름이 같습니다.** `4bit` / `8bit` / `bf16`만 쓰면 됩니다. GGUF일 때 4bit는 Q4_K_M입니다.
-- **변환 전에 용량과 RAM을 보여 줍니다.** `--estimate`는 받지도 변환하지도 않습니다. 디스크나 메모리가 부족하면 변환을 시작하지 않습니다.
-- **16GB / 24GB 맥을 기준으로 적었습니다.** 기본 4-bit는 그 환경에서 올리기 쉬운 값입니다.
-- **실패가 한 줄입니다.** 게이트된 모델, 없는 경로, 이미 있는 출력 폴더, 디스크/메모리 부족은 스택 트레이스 대신 짧은 에러입니다.
-- **변환만 합니다.** 채팅 UI나 서버가 아닙니다. 나온 폴더를 `mlx_lm`이나 `llama-cli`에 넘기면 됩니다.
+변환 후:
+
+```bash
+mlx_lm.generate --model ./converted/Qwen2.5-7B-Instruct-mlx-4bit --prompt "안녕"
+```
 
 ## 설치
 
-Apple Silicon, Python 3.10+가 필요합니다. Intel Mac은 지원하지 않습니다.
+Apple Silicon, Python 3.10+
 
 ```bash
 git clone https://github.com/jeonjw85/hf2mlx.git
@@ -41,60 +45,27 @@ cd hf2mlx
 uv pip install .
 ```
 
-```bash
-hf2mlx --help
-```
-
-## 빠른 시작
-
-```bash
-# 예시
-hf2mlx Qwen/Qwen2.5-3B-Instruct --quant 4bit
-```
-
-이미 받아 둔 로컬 폴더:
-
-```bash
-hf2mlx ./models/my-model --quant 8bit
-```
-
-변환 없이 용량과 메모리만 확인할 때:
-
-```bash
-# 예시
-hf2mlx google/gemma-2-9b-it --estimate
-```
-
-출력 디렉터리 지정:
-
-```bash
-# 예시
-hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
-```
-
-변환 후 실행 예시:
-
-```bash
-mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "안녕"
-```
-
 ## 옵션
 
-| 옵션         | 설명                                 | 기본값                           |
-| ------------ | ------------------------------------ | -------------------------------- |
-| `--format`   | `mlx` 또는 `gguf`                    | `mlx`                            |
-| `--quant`    | `4bit`, `8bit`, `bf16`               | `4bit`                           |
-| `--out`      | 출력 폴더                            | `./converted/<이름>-mlx-<quant>` |
-| `--estimate` | 용량/메모리만 계산하고 변환하지 않음 | 꺼짐                             |
-| `--hf-token` | Hugging Face 토큰                    | `HF_TOKEN`                       |
-| `--force`    | 기존 출력 폴더를 덮어씀              | 꺼짐                             |
+| 옵션         | 기본값                           |                                        |
+| ------------ | -------------------------------- | -------------------------------------- |
+| `--format`   | `mlx`                            | `mlx` 또는 `gguf`                      |
+| `--quant`    | `4bit`                           | `4bit`, `8bit`, `bf16`                 |
+| `--fit`      | 꺼짐                             | `--quant` 무시, 이 머신에 맞는 값 선택 |
+| `--ctx`      | `4096`                           | RAM 계산에 쓰는 컨텍스트 길이          |
+| `--out`      | `./converted/<이름>-mlx-<quant>` | 출력 폴더                              |
+| `--estimate` | 꺼짐                             | 용량/RAM만 출력                        |
+| `--rebuild`  | 꺼짐                             | ready MLX가 있어도 소스에서 다시 변환  |
+| `--hf-token` | `HF_TOKEN`                       | Hugging Face 토큰                      |
+| `--force`    | 꺼짐                             | 있는 출력 폴더를 덮어씀                |
+
+ready 조회는 `--format mlx`일 때만 / GGUF는 항상 변환
 
 ## GGUF
 
 ```bash
 uv pip install '.[gguf]'
 brew install llama.cpp
-# 예시
 hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 ```
 
@@ -104,33 +75,36 @@ hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 | `8bit`    | Q8_0                      |
 | `bf16`    | BF16                      |
 
-4-bit는 `PATH`에 `llama-quantize`가 필요합니다 (`brew install llama.cpp`). 첫 GGUF 변환 시 llama.cpp 변환 스크립트를 `~/.cache/hf2mlx`에 받을 수 있습니다. 이미 받아 둔 경우 `LLAMA_CPP_DIR`을 지정하면 됩니다.
+4-bit는 `PATH`에 `llama-quantize`가 필요합니다.  
+첫 GGUF 변환 때 llama.cpp 변환 스크립트를 `~/.cache/hf2mlx`에 받을 수 있고 이미 있는 체크아웃은 `LLAMA_CPP_DIR`로 지정하면 됩니다.
 
-## 맥 메모리
+## 메모리
 
-통합 메모리에는 가중치와 KV 캐시가 함께 올라갑니다. 컨텍스트가 길수록 추가 메모리가 필요합니다. 아래 수치는 대략적인 기준입니다.
+가중치와 KV 캐시가 통합 메모리를 같이 씁니다.  
+표보다 `--estimate --ctx N`을 믿으세요.
 
-| 머신   | 여유 있음           | 빠듯함    | 비권장               |
+| 머신   | 보통 괜찮음         | 빠듯함    | 비권장               |
 | ------ | ------------------- | --------- | -------------------- |
 | 16 GB  | 3B 4-bit            | 7B 4-bit  | 7B 8-bit / 13B+      |
 | 24 GB  | 7B 4-bit 또는 8-bit | 14B 4-bit | 양자화하지 않은 32B+ |
 | 32 GB+ | 14B 4-bit, 7B bf16  | 32B 4-bit | 70B는 4-bit여도 부담 |
 
-기본값은 4-bit입니다. 24GB 이하 환경에서 실제로 올리기 쉬운 설정이기 때문입니다.
+> 기본값이 4-bit인 이유 : 24GB 이하에서 실제로 올라가는 설정이기 때문
 
 ## 게이트된 모델
 
-Llama, Gemma 등 게이트된 모델은 모델 카드에서 접근 권한을 받은 토큰이 필요합니다.
+Llama, Gemma 등은 모델 카드에서 권한 받은 토큰 필수
 
 ```bash
 export HF_TOKEN=hf_...
-# 예시
 hf2mlx meta-llama/Llama-3.2-3B-Instruct --quant 4bit
 ```
 
-토큰 발급: https://huggingface.co/settings/tokens
+[https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-`Error: model is gated. Set HF_TOKEN and retry.`가 나오면 토큰이 없거나, 해당 모델 권한이 없는 경우입니다.
+`Error: model is gated. Set HF_TOKEN and retry.`는 토큰이 없거나 해당 모델 권한이 없는 경우 발생합니다.
+
+요청한 양자화본이 `mlx-community`에 있으면 원본 게이트 없이 그걸 받습니다.
 
 ## 개발
 
@@ -143,4 +117,4 @@ uv run basedpyright
 
 ## 라이선스
 
-MIT. [LICENSE](LICENSE)를 참고하세요.
+[MIT](LICENSE)

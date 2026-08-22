@@ -26,6 +26,8 @@ Typical flow:
 4. Print output path, size, and rough memory estimate
 5. Fail clearly when memory or disk is insufficient
 
+For MLX, check `mlx-community/<name>-<quant>` first and download that instead of converting. `--fit` picks quant from this machine's RAM. `--rebuild` forces a local convert.
+
 ## Core principles
 
 - Mac-first: Apple Silicon + unified memory
@@ -47,14 +49,19 @@ hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
 hf2mlx ./models/my-model --format mlx --quant 8bit
 hf2mlx google/gemma-2-9b-it --estimate
 hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
+hf2mlx Qwen/Qwen2.5-7B-Instruct --fit
+hf2mlx Qwen/Qwen2.5-7B-Instruct --estimate --ctx 8192
 ```
 
 | Option | Description | Default |
 |---|---|---|
 | `--format` | `mlx` or `gguf` | `mlx` |
 | `--quant` | `4bit`, `8bit`, `bf16` | `4bit` |
+| `--fit` | pick the largest quant that fits this Mac | `false` |
+| `--ctx` | context length for RAM estimates | `4096` |
 | `--out` | output directory | `./converted/<model-name>` |
 | `--estimate` | estimate size/memory only; do not convert | `false` |
+| `--rebuild` | convert from source even if a ready MLX repo exists | `false` |
 | `--hf-token` | Hugging Face token | env `HF_TOKEN` |
 | `--force` | overwrite existing output | `false` |
 
@@ -76,9 +83,13 @@ Keep this interface stable. Do not rename flags or the command unless the user a
 hf2mlx/
   __init__.py
   cli.py              # CLI entrypoint
+  job.py              # convert / reuse orchestration
   convert_mlx.py      # MLX conversion
   convert_gguf.py     # GGUF path (secondary)
   estimate.py         # size / RAM estimates
+  arch.py             # config.json → KV shape
+  fit.py              # --fit quant picker
+  ready.py            # mlx-community reuse
   hf_utils.py         # download / auth / path resolve
   utils.py            # shared helpers
 pyproject.toml
@@ -92,10 +103,11 @@ Display name: **HF2MLX**. Package and CLI: `hf2mlx`. Console script: `hf2mlx`.
 
 1. Resolve input: Hugging Face repo id, or local model directory
 2. Check disk space and warn if low
-3. Download the model if remote
-4. Convert with the selected quant
-5. Write artifacts to the output dir
-6. Print output path, final size, and rough RAM estimate for inference
+3. Reuse a matching mlx-community repo when `--format mlx` and not `--rebuild`
+4. Download the model if remote and a convert is needed
+5. Convert with the selected quant
+6. Write artifacts to the output dir
+7. Print output path, final size, and RAM estimate at `--ctx`
 
 ## Estimates
 
@@ -107,7 +119,7 @@ MLX:
 - 8-bit ≈ 1.0-1.2 bytes/param
 - bf16 ≈ 2.0 bytes/param
 
-Always mention that KV cache / context length adds extra memory.
+Always mention the `--ctx` used. KV cache is computed from `config.json` when available, otherwise a conservative heuristic.
 
 ## UX
 
@@ -118,8 +130,9 @@ Model: Qwen/Qwen2.5-7B-Instruct
 Format: MLX
 Quant: 4bit
 Output: ./converted/Qwen2.5-7B-Instruct-mlx-4bit
+Ready: mlx-community/Qwen2.5-7B-Instruct-4bit
 Size: 4.1 GB
-Est. inference memory: ~6-8 GB (depends on context length)
+Est. inference memory: ~6-8 GB @ 4096 ctx
 Done.
 ```
 

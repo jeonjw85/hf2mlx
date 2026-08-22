@@ -2,38 +2,42 @@
 
 # HF2MLX
 
-**Convert Hugging Face models to MLX for Apple Silicon.**
+Hugging Face → MLX on Apple Silicon
 
 [![CI](https://img.shields.io/github/actions/workflow/status/jeonjw85/hf2mlx/ci.yml?branch=main)](https://github.com/jeonjw85/hf2mlx/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/github/v/release/jeonjw85/hf2mlx)](https://github.com/jeonjw85/hf2mlx/releases)
 
-[한국어](README.ko.md)
+<a href="README.md"><strong>English</strong></a>
+&nbsp;·&nbsp;
+<a href="README.ko.md">한국어</a>
 
 </div>
 
-Commands below use example Hugging Face model IDs. Swap in any model you want.
-
 ```bash
-# Example
-hf2mlx Qwen/Qwen2.5-7B-Instruct --format mlx --quant 4bit
+hf2mlx Qwen/Qwen2.5-7B-Instruct
 ```
 
-Downloads if needed, converts, then prints the output path, size, and a rough RAM estimate. After that the model is local - no cloud.
+If `mlx-community` already has that quant, hf2mlx downloads it. Otherwise it converts locally.  
+When it finishes: path, size, and a RAM estimate at the context you asked for.
 
-## Why this exists
+```bash
+hf2mlx Qwen/Qwen2.5-7B-Instruct --fit
+hf2mlx Qwen/Qwen2.5-7B-Instruct --estimate --ctx 8192
+hf2mlx ./models/my-model --quant 8bit
+```
 
-`mlx_lm.convert` and `convert_hf_to_gguf.py` only convert. Ollama and LM Studio are apps. HF2MLX is **one CLI to make a local model on a Mac**.
+> `--fit` reads this Mac's RAM and picks `bf16` / `8bit` / `4bit` ("will it load", not "will it be comfortable")
+> Leaves ~7 GB for the OS. If nothing fits, it exits before downloading.
 
-- **MLX and GGUF from the same command.** `--format mlx` is the default. `--format gguf` uses llama.cpp. You do not learn two tools.
-- **Same quant names.** `4bit` / `8bit` / `bf16`. On GGUF, 4bit means Q4_K_M.
-- **Size and RAM before you convert.** `--estimate` does not download or convert. If disk or memory is too low, conversion does not start.
-- **Written for 16GB / 24GB Macs.** That is why 4-bit is the default.
-- **One-line failures.** Gated models, missing paths, existing output, and low disk/RAM print a short error instead of a traceback.
-- **Conversion only.** No chat UI, no server. Pass the output folder to `mlx_lm` or `llama-cli`.
+Then:
+
+```bash
+mlx_lm.generate --model ./converted/Qwen2.5-7B-Instruct-mlx-4bit --prompt "Hello"
+```
 
 ## Install
 
-Apple Silicon, Python 3.10+. Intel Macs are not a target.
+Apple Silicon, Python 3.10+
 
 ```bash
 git clone https://github.com/jeonjw85/hf2mlx.git
@@ -41,60 +45,27 @@ cd hf2mlx
 uv pip install .
 ```
 
-```bash
-hf2mlx --help
-```
-
-## Quick start
-
-```bash
-# Example
-hf2mlx Qwen/Qwen2.5-3B-Instruct --quant 4bit
-```
-
-Already downloaded:
-
-```bash
-hf2mlx ./models/my-model --quant 8bit
-```
-
-Size / RAM only, no convert:
-
-```bash
-# Example
-hf2mlx google/gemma-2-9b-it --estimate
-```
-
-Custom output dir:
-
-```bash
-# Example
-hf2mlx Qwen/Qwen2.5-3B-Instruct --out ./converted
-```
-
-Then run it:
-
-```bash
-mlx_lm.generate --model ./converted/Qwen2.5-3B-Instruct-mlx-4bit --prompt "Hello"
-```
-
 ## Options
 
-| Option       | Description               | Default                          |
-| ------------ | ------------------------- | -------------------------------- |
-| `--format`   | `mlx` or `gguf`           | `mlx`                            |
-| `--quant`    | `4bit`, `8bit`, `bf16`    | `4bit`                           |
-| `--out`      | output directory          | `./converted/<name>-mlx-<quant>` |
-| `--estimate` | print size/memory only    | off                              |
-| `--hf-token` | Hugging Face token        | `HF_TOKEN`                       |
-| `--force`    | overwrite existing output | off                              |
+| Option       | Default                          |                                        |
+| ------------ | -------------------------------- | -------------------------------------- |
+| `--format`   | `mlx`                            | `mlx` or `gguf`                        |
+| `--quant`    | `4bit`                           | `4bit`, `8bit`, `bf16`                 |
+| `--fit`      | off                              | ignore `--quant`, pick what fits       |
+| `--ctx`      | `4096`                           | context length used for RAM estimates  |
+| `--out`      | `./converted/<name>-mlx-<quant>` | output directory                       |
+| `--estimate` | off                              | print size/RAM only                    |
+| `--rebuild`  | off                              | convert from source even if a ready MLX repo exists |
+| `--hf-token` | `HF_TOKEN`                       | Hugging Face token                     |
+| `--force`    | off                              | overwrite existing output              |
+
+Ready lookup only runs for `--format mlx`. GGUF always converts.
 
 ## GGUF
 
 ```bash
 uv pip install '.[gguf]'
 brew install llama.cpp
-# Example
 hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 ```
 
@@ -104,33 +75,36 @@ hf2mlx Qwen/Qwen2.5-3B-Instruct --format gguf --quant 4bit
 | `8bit`    | Q8_0                      |
 | `bf16`    | BF16                      |
 
-4-bit needs `llama-quantize` on `PATH` (`brew install llama.cpp`). The first GGUF convert may clone llama.cpp's Python converter into `~/.cache/hf2mlx`. You can point at an existing checkout with `LLAMA_CPP_DIR`.
+4-bit needs `llama-quantize` on `PATH`.  
+The first GGUF convert may clone llama.cpp's Python converter into `~/.cache/hf2mlx`. Point `LLAMA_CPP_DIR` at an existing checkout to skip that.
 
-## Mac memory
+## Memory
 
-Weights and KV cache share unified memory. Longer context costs extra RAM. Numbers below are rough.
+Weights and KV cache share unified memory.  
+Trust `--estimate --ctx N`, not this table.
 
-| Machine | Comfortable        | Tight     | Skip             |
-| ------- | ------------------ | --------- | ---------------- |
-| 16 GB   | 3B 4-bit           | 7B 4-bit  | 7B 8-bit / 13B+  |
-| 24 GB   | 7B 4-bit or 8-bit  | 14B 4-bit | 32B+ unquantized |
-| 32 GB+  | 14B 4-bit, 7B bf16 | 32B 4-bit | 70B unless 4-bit |
+| Machine | Usually fine        | Tight     | Skip             |
+| ------- | ------------------- | --------- | ---------------- |
+| 16 GB   | 3B 4-bit            | 7B 4-bit  | 7B 8-bit / 13B+  |
+| 24 GB   | 7B 4-bit or 8-bit   | 14B 4-bit | 32B+ unquantized |
+| 32 GB+  | 14B 4-bit, 7B bf16  | 32B 4-bit | 70B unless 4-bit |
 
-Default is 4-bit because that is what actually fits on ≤24 GB machines.
+> Default is 4-bit because that is what actually fits on ≤24 GB machines.
 
 ## Gated models
 
-Llama, Gemma, and friends need a token with access on the model card.
+Llama, Gemma, and similar need a token with access on the model card.
 
 ```bash
 export HF_TOKEN=hf_...
-# Example
 hf2mlx meta-llama/Llama-3.2-3B-Instruct --quant 4bit
 ```
 
-Token: https://huggingface.co/settings/tokens
+[https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-`Error: model is gated. Set HF_TOKEN and retry.` means the token is missing, or it does not have access.
+`Error: model is gated. Set HF_TOKEN and retry.` means the token is missing or does not have access.
+
+If `mlx-community` already has the quant you asked for, hf2mlx uses that and does not need the original gate.
 
 ## Develop
 
@@ -143,4 +117,4 @@ uv run basedpyright
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE)
