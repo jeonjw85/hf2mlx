@@ -91,6 +91,25 @@ class InsufficientMemoryError(Hf2mlxError):
 
 
 @dataclass(frozen=True, slots=True)
+class DoesNotFitError(Hf2mlxError):
+    needed_label: str
+    available_label: str
+
+    @override
+    def __str__(self) -> str:
+        need = self.needed_label
+        have = self.available_label
+        return f"Error: no quant fits this machine. Need ~{need}, have {have}."
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryUnknownError(Hf2mlxError):
+    @override
+    def __str__(self) -> str:
+        return "Error: could not read system memory. Pass --quant instead of --fit."
+
+
+@dataclass(frozen=True, slots=True)
 class UnsupportedArchitectureError(Hf2mlxError):
     reason: str
 
