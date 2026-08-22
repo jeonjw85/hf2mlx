@@ -7,7 +7,13 @@ from functools import partial
 from pathlib import Path
 from typing import Final, TypeVar
 
-from huggingface_hub import ModelInfo, model_info, snapshot_download
+from huggingface_hub import (
+    ModelInfo,
+    hf_hub_download,
+    model_info,
+    repo_exists,
+    snapshot_download,
+)
 from huggingface_hub.errors import (
     GatedRepoError,
     HfHubHTTPError,
@@ -31,6 +37,7 @@ _INDEX_NAMES: Final = (
     "model.safetensors.index.fp32.json",
 )
 _AUTH_STATUSES: Final = frozenset({401, 403})
+_NOT_FOUND: Final = 404
 
 T = TypeVar("T")
 
@@ -86,6 +93,41 @@ def download_model(repo_id: str, token: str | None) -> Path:
     downloader = partial(snapshot_download, repo_id=repo_id, token=token)
     cached = _call_hub(repo_id, downloader)
     return Path(cached)
+
+
+def download_to(repo_id: str, token: str | None, dest: Path) -> Path:
+    downloader = partial(
+        snapshot_download,
+        repo_id=repo_id,
+        token=token,
+        local_dir=str(dest),
+    )
+    cached = _call_hub(repo_id, downloader)
+    return Path(cached)
+
+
+def hub_repo_available(repo_id: str, token: str | None) -> bool:
+    return _call_hub(
+        repo_id,
+        partial(repo_exists, repo_id, token=token, repo_type="model"),
+    )
+
+
+def download_config(repo_id: str, token: str | None) -> Path | None:
+    downloader = partial(
+        hf_hub_download,
+        repo_id=repo_id,
+        filename="config.json",
+        token=token,
+    )
+    try:
+        return Path(_call_hub(repo_id, downloader))
+    except ModelNotFoundError:
+        return None
+    except HubRequestError as exc:
+        if exc.status == _NOT_FOUND:
+            return None
+        raise
 
 
 def hub_param_count(repo_id: str, token: str | None) -> int | None:
